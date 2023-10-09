@@ -12,6 +12,7 @@ import (
 )
 
 var functions = template.FuncMap{}
+
 var app *config.AppConfig
 
 // NewTemplates sets the config for the template package
@@ -33,13 +34,13 @@ func RenderTemplate(w http.ResponseWriter, tmpl string, td *models.TemplateData)
 		tc = app.TemplateCache
 	} else {
 		tc, _ = CreateTemplateCache()
-
 	}
 
 	t, ok := tc[tmpl]
 	if !ok {
-		log.Fatal("Could not get ant template or it's not exist")
+		log.Fatal("Could not get template from template cache")
 	}
+
 	buf := new(bytes.Buffer)
 
 	td = AddDefaultData(td)
@@ -53,8 +54,9 @@ func RenderTemplate(w http.ResponseWriter, tmpl string, td *models.TemplateData)
 
 }
 
-// CreateTemplateCache creats a template cache as a map
+// CreateTemplateCache creates a template cache as a map
 func CreateTemplateCache() (map[string]*template.Template, error) {
+
 	myCache := map[string]*template.Template{}
 
 	pages, err := filepath.Glob("./templates/*.page.tmpl")
@@ -65,7 +67,7 @@ func CreateTemplateCache() (map[string]*template.Template, error) {
 	for _, page := range pages {
 		name := filepath.Base(page)
 
-		ts, err := template.New(page).Funcs(functions).ParseFiles(page)
+		ts, err := template.New(name).Funcs(functions).ParseFiles(page)
 		if err != nil {
 			return myCache, err
 		}
