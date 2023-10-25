@@ -2,6 +2,7 @@ package main
 
 import (
 	"bookings/internal/config"
+	"bookings/internal/driver"
 	"bookings/internal/handlers"
 	"bookings/internal/helpers"
 	"bookings/internal/models"
@@ -23,10 +24,12 @@ var infoLog *log.Logger
 var errorLog *log.Logger
 
 func main() {
-	err := run()
+
+	db, err := run()
 	if err != nil {
 		log.Fatal(err)
 	}
+	defer db.SQL.Close()
 
 	fmt.Printf("Starting application on port %s\n", portNumber)
 
@@ -42,7 +45,7 @@ func main() {
 
 }
 
-func run() error {
+func run() (*driver.DB, error) {
 	//what am I going to put in the session
 	gob.Register(models.Reservation{})
 
@@ -63,19 +66,27 @@ func run() error {
 
 	app.Session = session
 
+	// connect to database
+	log.Println("connecting to database ...")
+	db, err := driver.ConnectSQL("host=localhost port =5432 dbname=bookings user=postgres password=")
+	if err != nil {
+		log.Fatal("Cannot connect to database! Dying ...")
+	}
+	log.Println("Connected to database!")
+
 	tc, err := render.CreateTemplateCache()
 	if err != nil {
 		log.Fatal("cannot create template cache")
-		return err
+		return nil, err
 	}
 
 	app.TemplateCache = tc
 	app.UseCache = false
 
-	repo := handlers.NewRepo(&app)
+	repo := handlers.NewRepo(&app, db)
 	handlers.NewHandlers(repo)
 	render.NewTemplates(&app)
 	helpers.NewHelpers(&app)
 
-	return nil
+	return db, nil
 }
