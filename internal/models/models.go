@@ -17,7 +17,7 @@ type User struct {
 // Room is the rooms model
 type Room struct {
 	ID        int
-	RoomNAme  string
+	RoomName  string
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }
